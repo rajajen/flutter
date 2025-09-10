@@ -1,0 +1,61 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Ensure we're in the iOS directory
+    Dir.chdir("../ios") do
+      # Clean previous builds
+      clean_build_artifacts
+
+      # Get certificates and provisioning profiles
+      sync_code_signing(
+        type: "appstore",
+        readonly: true
+      )
+
+      # Build Flutter app
+      sh("cd .. && flutter clean")
+      sh("cd .. && flutter pub get")
+      sh("cd .. && flutter build ios --release --no-codesign")
+
+      # Build and archive the iOS app
+      build_app(
+        workspace: "Runner.xcworkspace",
+        scheme: "Runner",
+        configuration: "Release",
+        export_method: "app-store",
+        output_directory: "./build",
+        output_name: "app.ipa",
+        clean: true,
+        include_bitcode: false,
+        include_symbols: true
+      )
+
+      # Upload to TestFlight
+      upload_to_testflight(
+        skip_waiting_for_build_processing: true,
+        skip_submission: true,
+        distribute_external: false,
+        notify_external_testers: false
+      )
+
+      # Clean up
+      clean_build_artifacts
+    end
+  end
