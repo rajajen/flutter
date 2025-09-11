@@ -1,0 +1,113 @@
+
+pipeline {
+    agent none
+
+    parameters {
+        choice(
+            name: 'ENV',
+            choices: ['dev', 'qa', 'prod'],
+            description: 'Select the environment to deploy'
+        )
+    }
+
+    environment {
+        NODE_VERSION = '20.4.0'
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk'
+        FLUTTER_VERSION = '3.13.0'
+        FASTLANE_HOME = '/usr/local/fastlane'
+    }
+
+    stages {
+
+        stage('Dev - Build & Test') {
+            agent { label 'linux' } // Android / Flutter Linux agent
+            when {
+                expression { params.ENV == 'dev' || params.ENV == 'qa' || params.ENV == 'prod' }
+            }
+            steps {
+                echo "Building for environment: ${params.ENV}"
+                
+                // Node version
+                sh "echo 'Using Node version: ${NODE_VERSION}'"
+                sh "node -v || echo 'Node not installed!'"
+
+                // Flutter setup
+                sh """
+                flutter --version
+                flutter clean
+                flutter pub get
+                flutter test
+                """
+            }
+        }
+
+        stage('iOS - Build & Test') {
+            agent { label 'macos' } // iOS agent
+            when {
+                expression { params.ENV == 'dev' || params.ENV == 'qa' || params.ENV == 'prod' }
+            }
+            steps {
+                echo "iOS build for environment: ${params.ENV}"
+                sh """
+                flutter clean
+                flutter pub get
+                flutter build ios --${params.ENV}
+                """
+            }
+        }
+
+        stage('Android - Build & Test') {
+            agent { label 'linux' }
+            when {
+                expression { params.ENV == 'dev' || params.ENV == 'qa' || params.ENV == 'prod' }
+            }
+            steps {
+                echo "Android build for environment: ${params.ENV}"
+                sh """
+                flutter clean
+                flutter pub get
+                flutter build apk --${params.ENV}
+                """
+            }
+        }
+
+        stage('Deploy') {
+            agent { label 'linux' }
+            when {
+                expression { params.ENV == 'dev' || params.ENV == 'qa' || params.ENV == 'prod' }
+            }
+            steps {
+                script {
+                    if (params.ENV == 'dev') {
+                        echo "Deploying to Dev Track..."
+                        sh """
+                        fastlane android dev
+                        fastlane ios dev
+                        """
+                    } else if (params.ENV == 'qa') {
+                        echo "Deploying to QA Track..."
+                        sh """
+                        fastlane android qa
+                        fastlane ios qa
+                        """
+                    } else if (params.ENV == 'prod') {
+                        echo "Deploying to Production Track..."
+                        sh """
+                        fastlane android prod
+                        fastlane ios prod
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build and Deployment for ${params.ENV} completed successfully!"
+        }
+        failure {
+            echo " Build or Deployment for ${params.ENV} failed!"
+        }
+    }
+}
