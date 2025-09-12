@@ -13,49 +13,36 @@
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
 
+
+
 default_platform(:ios)
 
 platform :ios do
-  desc "Build and upload to TestFlight"
+  desc "Build and upload Flutter app to TestFlight"
   lane :beta do
-    # Ensure we're in the iOS directory
-    Dir.chdir("../ios") do
-      # Clean previous builds
-      clean_build_artifacts
+    
+    sh "cd .. && flutter clean && flutter pub get"
 
-      # Get certificates and provisioning profiles
-      sync_code_signing(
-        type: "appstore",
-        readonly: true
-      )
 
-      # Build Flutter app
-      sh("cd .. && flutter clean")
-      sh("cd .. && flutter pub get")
-      sh("cd .. && flutter build ios --release --no-codesign")
+    sh "cd .. && flutter build ios --release --no-simulator"
 
-      # Build and archive the iOS app
-      build_app(
-        workspace: "Runner.xcworkspace",
-        scheme: "Runner",
-        configuration: "Release",
-        export_method: "app-store",
-        output_directory: "./build",
-        output_name: "app.ipa",
-        clean: true,
-        include_bitcode: false,
-        include_symbols: true
-      )
+    build_ios_app(
+      scheme: "Runner",          
+      export_method: "app-store" 
+    )
 
-      # Upload to TestFlight
-      upload_to_testflight(
-        skip_waiting_for_build_processing: true,
-        skip_submission: true,
-        distribute_external: false,
-        notify_external_testers: false
-      )
-
-      # Clean up
-      clean_build_artifacts
-    end
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      beta_app_review_info: {
+        contact_email: "your_email@example.com",
+        contact_first_name: "YourName",
+        contact_last_name: "LastName",
+        contact_phone: "+91 9876543210",
+        demo_account_name: "demo@example.com",
+        demo_account_password: "password123",
+        notes: "Flutter iOS build uploaded from EC2 CI"
+      }
+    )
   end
+end
