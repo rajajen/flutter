@@ -14,13 +14,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Clone Flutter SDK (3.27.2)
+      - name: Clone Flutter SDK (3.27.2 with Dart 3.8.1)
         run: |
           git clone https://github.com/flutter/flutter.git --branch 3.27.2 --depth 1 ~/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
-
-      - name: Flutter version
-        run: flutter --version
+          flutter --version
+          dart --version
 
       - name: Install dependencies
         run: flutter pub get
