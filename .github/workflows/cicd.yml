@@ -32,8 +32,13 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.26.0'
+          flutter-version: '3.26.0'  # Flutter >=3.26 includes Dart 3.8.1+
           channel: 'stable'
+
+      - name: Check Flutter & Dart version
+        run: |
+          flutter --version
+          dart --version
 
       - name: Install dependencies
         run: flutter pub get
@@ -63,8 +68,13 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.26.0'  # Flutter >=3.26 includes Dart 3.8.1+
           channel: 'stable'
+
+      - name: Check Flutter & Dart version
+        run: |
+          flutter --version
+          dart --version
 
       - name: Install dependencies
         run: flutter pub get
