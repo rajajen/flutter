@@ -1,0 +1,80 @@
+name: Flutter Build Dispatcher
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  dispatcher:
+    runs-on: macos-latest
+    outputs:
+      android_job: ${{ steps.set-outputs.outputs.android }}
+      ios_job: ${{ steps.set-outputs.outputs.ios }}
+    steps:
+      - name: Set outputs for jobs
+        id: set-outputs
+        run: |
+          echo "android=true" >> $GITHUB_OUTPUT
+          echo "ios=true" >> $GITHUB_OUTPUT
+
+  android-build:
+    runs-on: ubuntu-latest
+    needs: dispatcher
+    if: ${{ needs.dispatcher.outputs.android_job == 'true' }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Android APK
+        run: flutter build apk --debug
+
+      - name: Build Android App Bundle (unsigned)
+        run: flutter build appbundle --release --no-shrink
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-builds
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/bundle/release/*.aab
+
+  ios-build:
+    runs-on: macos-latest
+    needs: dispatcher
+    if: ${{ needs.dispatcher.outputs.ios_job == 'true' }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-builds
+          path: |
+            build/ios/iphoneos/*.app
