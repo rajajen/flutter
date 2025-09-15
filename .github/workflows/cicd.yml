@@ -33,6 +33,7 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git --branch 3.13.6 --depth 1 ~/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           dart --version
 
@@ -65,6 +66,7 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git --branch 3.13.6 --depth 1 ~/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           dart --version
 
